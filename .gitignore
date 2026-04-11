@@ -1,0 +1,59 @@
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# MemoryCaptures
+/[Mm]emoryCaptures/
+
+# External
+/[Ee]xternal/
+
+# IDE
+/*.user
+/*.userprefs
+/.vs/
+/.idea/
+
+# Mac
+.DS_Store
+*.swp
+*.lock
+
+# Build results
+/[Aa]ps/
+/[Mm]mi-debug/
+/[Oo]ut/
+/[Rr]esults/
+
+# UIElements
+*.uss
+*.uxml
+
+# UI Toolkit
+**/UI[Tt]oolkit/**
+**/UIElementsSchema/**
+*.tss
+
+# Shader Graph
+**/ShaderGraphs/**
+**/ShaderGraph/
+
+# VFX
+**/VFX/**
+**/VisualEffects/
+
+# Unity Test Framework
+/[Tt]est[Ee]ditorBuild/
+/[Nn]Unit/
+
+# Backup
+*.orig
+*.bak
+
+# Crashlytics
+/[Aa]ssets/External/Crashlytics/
