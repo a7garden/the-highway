@@ -16,15 +16,38 @@ public class WomanNPC : MonoBehaviour
     [Header("Movement")]
     public float walkSpeed = 1.3f;
     public float erraticSpeed = 2f;
-    private Transform player;
 
-    void Start() { player = GameObject.FindWithTag("Player")?.transform; }
+    private Transform player;
+    private Animator _anim;
+
+    void Start()
+    {
+        player = UnityEngine.GameObject.FindWithTag("Player")?.transform;
+        _anim  = GetComponentInChildren<Animator>();
+    }
+
+    void SetAnim(bool walking)
+    {
+        if (_anim == null) return;
+        // polyperfect Base Controller 파라미터: "Walking" bool 또는 "Speed" float
+        if (_anim.parameters.Length > 0)
+        {
+            foreach (var p in _anim.parameters)
+            {
+                if (p.name == "Walking" && p.type == AnimatorControllerParameterType.Bool)
+                    { _anim.SetBool("Walking", walking); return; }
+                if (p.name == "Speed" && p.type == AnimatorControllerParameterType.Float)
+                    { _anim.SetFloat("Speed", walking ? 1f : 0f); return; }
+            }
+        }
+    }
 
     public void StartSequence() { StartCoroutine(WomanRoutine()); }
 
     IEnumerator WomanRoutine()
     {
         // Walk toward player
+        SetAnim(true);
         while (player != null && Vector3.Distance(transform.position, player.position) > 2.8f)
         {
             Vector3 d = (player.position - transform.position); d.y = 0; d.Normalize();
@@ -32,6 +55,7 @@ public class WomanNPC : MonoBehaviour
             transform.forward = d;
             yield return null;
         }
+        SetAnim(false);
 
         // Dialogue
         GameManager.Instance?.EnableMovement(false);
@@ -43,6 +67,7 @@ public class WomanNPC : MonoBehaviour
         GameManager.Instance?.EnableMovement(true);
 
         // Walk away erratically
+        SetAnim(true);
         Vector3 wander = (transform.forward + new Vector3(0.6f, 0f, 0.2f)).normalized;
         float timer = 0f;
         while (timer < 5f)
@@ -54,6 +79,7 @@ public class WomanNPC : MonoBehaviour
             transform.forward = wander;
             yield return null;
         }
+        SetAnim(false);
 
         GameManager.Instance?.SetState(HighwayState.WalkToTaxi);
     }
