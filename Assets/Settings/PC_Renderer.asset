@@ -17,8 +17,8 @@ MonoBehaviour:
     enablePixelize: 1
     pixelWidth: 320
     enableGlitch: 1
-    glitchIntensity: 0.25
-    glitchSpeed: 8
+    glitchIntensity: 0.05
+    glitchSpeed: 1.9
     glitchBandSize: 0.06
     chromaticAberration: 0.012
     enableFog: 1

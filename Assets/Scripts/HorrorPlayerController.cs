@@ -15,6 +15,9 @@ public class HorrorPlayerController : MonoBehaviour
     [Header("References")]
     public Transform cameraTransform;
 
+    // 카메라 잠금 (개미 구간용)
+    [HideInInspector] public bool cameraLocked = false;
+
     private CharacterController _cc;
     private Vector3 _velocity;
     private float _verticalRot = 0f;
@@ -36,8 +39,8 @@ public class HorrorPlayerController : MonoBehaviour
         if (keyboard.escapeKey.wasPressedThisFrame)
             SetCursorLock(!_cursorLocked);
 
-        // 마우스 시점
-        if (_cursorLocked)
+        // 마우스 시점 (잠금 중이면 무시)
+        if (_cursorLocked && !cameraLocked)
         {
             Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
             transform.Rotate(Vector3.up * delta.x);
@@ -51,16 +54,19 @@ public class HorrorPlayerController : MonoBehaviour
         if (_cc.isGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
 
-        // WASD 이동
-        float h = 0f, v = 0f;
-        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) h += 1f;
-        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)  h -= 1f;
-        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)    v += 1f;
-        if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)  v -= 1f;
+        // WASD 이동 (카메라 잠금 중엔 이동도 막음)
+        if (!cameraLocked)
+        {
+            float h = 0f, v = 0f;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) h += 1f;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)  h -= 1f;
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)    v += 1f;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)  v -= 1f;
 
-        Vector3 move = transform.right * h + transform.forward * v;
-        if (move.magnitude > 1f) move.Normalize();
-        _cc.Move(move * moveSpeed * Time.deltaTime);
+            Vector3 move = transform.right * h + transform.forward * v;
+            if (move.magnitude > 1f) move.Normalize();
+            _cc.Move(move * moveSpeed * Time.deltaTime);
+        }
 
         _velocity.y += gravity * Time.deltaTime;
         _cc.Move(_velocity * Time.deltaTime);
@@ -71,5 +77,23 @@ public class HorrorPlayerController : MonoBehaviour
         _cursorLocked = locked;
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible   = !locked;
+    }
+
+    /// <summary>카메라를 아래 방향으로 고정 (개미 구간)</summary>
+    public void LockCameraDown()
+    {
+        cameraLocked = true;
+        _verticalRot = 90f;
+        if (cameraTransform != null)
+            cameraTransform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+    }
+
+    /// <summary>카메라 잠금 해제</summary>
+    public void UnlockCamera()
+    {
+        cameraLocked = false;
+        _verticalRot = 0f;
+        if (cameraTransform != null)
+            cameraTransform.localRotation = Quaternion.Euler(0f, 0f, 0f);
     }
 }
