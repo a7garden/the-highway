@@ -33510,7 +33510,7 @@ Transform:
   m_GameObject: {fileID: 1175970846}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2, y: 3, z: 58}
+  m_LocalPosition: {x: 0, y: 4, z: 58}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -47498,10 +47498,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AntSystem
   antCount: 14
-  antSpacing: 0.35
+  antSpacing: 0.45
   antSpeed: 0.6
-  antMoveDir: {x: -1, y: 0, z: 0.05}
-  antScale: {x: 0.04, y: 0.04, z: 0.04}
+  antMoveDir: {x: -1, y: 0, z: 0}
+  antScale: {x: 0.08, y: 0.08, z: 0.08}
   antPrefab: {fileID: 4002470688746227398, guid: c509295d6b3b94be383289019639d82b, type: 3}
 --- !u!4 &1598488060
 Transform:
@@ -47512,7 +47512,7 @@ Transform:
   m_GameObject: {fileID: 1598488058}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 0, z: 55}
+  m_LocalPosition: {x: 10, y: 0, z: 58}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
