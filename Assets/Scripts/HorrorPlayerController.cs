@@ -88,6 +88,31 @@ public class HorrorPlayerController : MonoBehaviour
             cameraTransform.localRotation = Quaternion.Euler(90f, 0f, 0f);
     }
 
+    /// <summary>카메라를 아래 방향으로 부드럽게 전환</summary>
+    public void SmoothLockCameraDown(float duration = 0.5f)
+    {
+        StartCoroutine(SmoothCameraDownRoutine(duration));
+    }
+
+    System.Collections.IEnumerator SmoothCameraDownRoutine(float duration)
+    {
+        cameraLocked = true;
+        Quaternion startRot = cameraTransform != null ? cameraTransform.localRotation : Quaternion.identity;
+        Quaternion targetRot = Quaternion.Euler(90f, 0f, 0f);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            if (cameraTransform != null)
+                cameraTransform.localRotation = Quaternion.Slerp(startRot, targetRot, t);
+            yield return null;
+        }
+        if (cameraTransform != null)
+            cameraTransform.localRotation = targetRot;
+        _verticalRot = 90f;
+    }
+
     /// <summary>카메라 잠금 해제</summary>
     public void UnlockCamera()
     {
@@ -95,5 +120,30 @@ public class HorrorPlayerController : MonoBehaviour
         _verticalRot = 0f;
         if (cameraTransform != null)
             cameraTransform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+    }
+
+    /// <summary>카메라 잠금을 부드럽게 해제</summary>
+    public void SmoothUnlockCamera(float duration = 0.5f)
+    {
+        StartCoroutine(SmoothCameraUnlockRoutine(duration));
+    }
+
+    System.Collections.IEnumerator SmoothCameraUnlockRoutine(float duration)
+    {
+        Quaternion startRot = cameraTransform != null ? cameraTransform.localRotation : Quaternion.Euler(90f, 0f, 0f);
+        Quaternion targetRot = Quaternion.Euler(0f, 0f, 0f);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            if (cameraTransform != null)
+                cameraTransform.localRotation = Quaternion.Slerp(startRot, targetRot, t);
+            yield return null;
+        }
+        if (cameraTransform != null)
+            cameraTransform.localRotation = targetRot;
+        cameraLocked = false;
+        _verticalRot = 0f;
     }
 }

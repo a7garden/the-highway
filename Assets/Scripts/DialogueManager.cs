@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 
 public class DialogueManager : MonoBehaviour
@@ -52,7 +53,7 @@ public class DialogueManager : MonoBehaviour
             yield return _typingCoroutine = StartCoroutine(TypeLine(line));
 
             // 클릭으로 다음 줄 넘기기
-            yield return new WaitUntil(() => Input.GetMouseButtonDown(0));
+            yield return new WaitUntil(() => Mouse.current.leftButton.wasPressedThisFrame);
         }
 
         // 마지막 줄 후 자동 숨김

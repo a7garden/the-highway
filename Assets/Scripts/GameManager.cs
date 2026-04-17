@@ -90,9 +90,9 @@ public class GameManager : MonoBehaviour
                 break;
 
             case HighwayState.AntKilling:
-                // 전용 위치로 이동 → 카메라 아래 고정 → 밝은 조명 ON
+                // 전용 위치로 이동 → 카메라 아래 부드럽게 전환 → 밝은 조명 ON
                 if (sp_AntView != null) Teleport(sp_AntView);
-                if (playerController != null) playerController.LockCameraDown();
+                if (playerController != null) playerController.SmoothLockCameraDown(0.5f);
                 SetAntLighting(true);
                 EnableSeg(seg_Ants);
                 break;
@@ -209,29 +209,45 @@ public class GameManager : MonoBehaviour
     // ── 개미 구간 조명 전환 ──────────────────────────────────────────
     public void SetAntLighting(bool antMode)
     {
-        // 개미 전용 밝은 햇빛
+        // 개미 전용 밝은 햇빛 (화면을 하얗게 만들므로 일단 끄기)
         if (antSunLight != null)
-            antSunLight.enabled = antMode;
+            antSunLight.enabled = false;
 
         // 평소 조명은 반대로
         if (flashLight != null) flashLight.enabled = !antMode;
         if (moonLight  != null) moonLight.enabled  = !antMode;
 
-        // 앰비언트: 개미 = 밝고 푸른 하늘 / 평소 = 어두운 밤
+        // 앰비언트만 약간 조절
         RenderSettings.ambientLight = antMode
-            ? new Color(0.6f, 0.65f, 0.7f)
+            ? new Color(0.2f, 0.2f, 0.25f)
             : new Color(0.15f, 0.15f, 0.2f);
     }
 
     // ── 개미 구간 종료 시 호출 (AntSystem에서 부름) ──────────────────
     public void RestoreFromAntView()
     {
-        // 카메라 잠금 해제
-        if (playerController != null) playerController.UnlockCamera();
         // 조명 복구
         SetAntLighting(false);
         // 이동 재개
         EnableMovement(true);
+    }
+
+    // ── 개미가 모두 지나갈 때 호출 ─────────────────────────────────
+    public void EndAntEvent()
+    {
+        StartCoroutine(EndAntEventRoutine());
+    }
+
+    System.Collections.IEnumerator EndAntEventRoutine()
+    {
+        if (playerController != null)
+            playerController.SmoothUnlockCamera(0.5f);
+        yield return new WaitForSeconds(0.6f);
+        DisableSeg(seg_Ants);
+        SetAntLighting(false);
+        EnableMovement(true);
+        // 상태를 Intro로 (단, 텔레포트 없이 현재 위치 유지)
+        State = HighwayState.Intro;
     }
 
     // ─────────────────────────────────────────────────────────────────

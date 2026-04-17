@@ -3,7 +3,8 @@ using System.Collections;
 
 public class AntBehavior : MonoBehaviour
 {
-    AntSystem sys; float speed; Vector3 dir; bool dead=false;
+    AntSystem sys; float speed; Vector3 dir; bool dead=false; bool passed=false;
+    float passThreshold = 30f;
     public bool IsDead { get { return dead; } }
     LineRenderer outlineLR;
     const int SEGS=20;
@@ -11,6 +12,8 @@ public class AntBehavior : MonoBehaviour
 
     public void Setup(AntSystem s, float spd, Vector3 d)
     { sys=s; speed=spd; dir=d; BuildOutline(); }
+
+    public void SetPassThreshold(float t) { passThreshold = t; }
 
     void BuildOutline()
     {
@@ -48,7 +51,18 @@ public class AntBehavior : MonoBehaviour
 
     void Update()
     {
-        if (!dead) transform.position+=dir*speed*Time.deltaTime;
+        if (!dead)
+        {
+            transform.position+=dir*speed*Time.deltaTime;
+
+            // Check if ant passed camera (moved far enough to the left)
+            if (!passed && transform.position.x < passThreshold)
+            {
+                passed = true;
+                sys?.OnAntPassed();
+                StartCoroutine(DieRoutine());
+            }
+        }
         if (outlineLR!=null && outlineLR.gameObject.activeSelf) RefreshOutline();
     }
 
