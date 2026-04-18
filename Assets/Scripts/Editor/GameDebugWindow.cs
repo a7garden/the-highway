@@ -8,7 +8,7 @@ public class GameDebugWindow : EditorWindow
         ("① 도로 시작",         "게임 시작 지점 — 플레이어 sp_RoadStart",                  HighwayState.Intro),
         ("② 개미 잡기",         "sp_AntView 이동, 카메라 바닥 고정, 밝은 햇빛",             HighwayState.AntKilling),
         ("③ 여자 컷씬",         "카메라 -75° 틸트, 여자 NPC 등장 연출",                     HighwayState.WomanCutscene),
-        ("④ 여자 NPC 대화",     "woman_casual 걸어와 5줄 대화 → 도망",                      HighwayState.WomanDialogue),
+        ("④ 여자 NPC 사라짐",   "플레이어 접근 → 5초 응시 → NPC 시야 밖으로 사라짐",            HighwayState.WomanDisappear),
         ("⑤ 도로 걷기 (택시前)", "sp_AfterWoman — 택시 트리거 향해 걷기",                    HighwayState.WalkToTaxi),
         ("⑥ 택시 기사 대화",    "car-taxi 달려옴, '여자 봤냐' 선택지",                      HighwayState.TaxiEncounter),
         ("⑦ 방 (TV 장면)",     "sp_Room1, TV 채널 4 → 도로 영상 → 다음 이동",              HighwayState.Room1),

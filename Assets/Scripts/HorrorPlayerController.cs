@@ -146,4 +146,53 @@ public class HorrorPlayerController : MonoBehaviour
         cameraLocked = false;
         _verticalRot = 0f;
     }
+
+    /// <summary>특정 위치를 부드럽게 바라보도록 카메라 회전</summary>
+    public void SmoothLookAt(Vector3 worldPos, float duration = 1f)
+    {
+        StartCoroutine(SmoothLookAtRoutine(worldPos, duration));
+    }
+
+    System.Collections.IEnumerator SmoothLookAtRoutine(Vector3 worldPos, float duration)
+    {
+        cameraLocked = true;
+        Quaternion startRot = cameraTransform != null ? cameraTransform.localRotation : Quaternion.identity;
+
+        // worldPos를 로컬 공간으로 변환하여 pitch/yaw 계산
+        Vector3 dir = worldPos - cameraTransform.position;
+        float pitch = 0f;
+        bool success = false;
+
+        if (dir.sqrMagnitude > 0.001f && cameraTransform.parent != null)
+        {
+            // 플레이어 기준 로컬 방향
+            Vector3 localDir = Quaternion.Inverse(cameraTransform.parent.rotation) * dir;
+            localDir.Normalize();
+
+            // pitch (상하) = Y 방향, yaw (좌우) = XZ 평면에서
+            pitch = Mathf.Asin(Mathf.Clamp(localDir.y, -1f, 1f)) * Mathf.Rad2Deg;
+            float yaw = Mathf.Atan2(localDir.x, localDir.z) * Mathf.Rad2Deg;
+
+            pitch = Mathf.Clamp(pitch, -verticalClampAngle, verticalClampAngle);
+            Quaternion targetRot = Quaternion.Euler(pitch, yaw, 0f);
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                if (cameraTransform != null)
+                    cameraTransform.localRotation = Quaternion.Slerp(startRot, targetRot, t);
+                yield return null;
+            }
+            if (cameraTransform != null)
+                cameraTransform.localRotation = targetRot;
+
+            _verticalRot = pitch;
+            success = true;
+        }
+
+        cameraLocked = false;
+        if (!success) _verticalRot = 0f;
+    }
 }
