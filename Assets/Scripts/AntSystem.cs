@@ -80,7 +80,8 @@ public class AntSystem : MonoBehaviour
                 go.transform.SetParent(transform);
                 go.transform.position = pos;
                 go.transform.localScale = antScale;
-                go.transform.forward = marchDir;
+                float _yAngle = Mathf.Atan2(marchDir.x, marchDir.z) * Mathf.Rad2Deg;
+                go.transform.rotation = Quaternion.Euler(270f, _yAngle, 0f);
                 if (go.GetComponent<Collider>()==null)
                 { var sc=go.AddComponent<SphereCollider>(); sc.radius=0.25f/antScale.x; }
             }
@@ -90,7 +91,8 @@ public class AntSystem : MonoBehaviour
                 go.transform.SetParent(transform);
                 go.transform.position = pos;
                 go.transform.localScale = antScale;
-                go.transform.forward = marchDir;
+                float _yAngle = Mathf.Atan2(marchDir.x, marchDir.z) * Mathf.Rad2Deg;
+                go.transform.rotation = Quaternion.Euler(270f, _yAngle, 0f);
                 go.GetComponent<MeshRenderer>().material = fallbackMat;
                 Destroy(go.GetComponent<BoxCollider>());
                 var sc=go.AddComponent<SphereCollider>(); sc.radius=0.25f/antScale.x;

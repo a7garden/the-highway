@@ -11806,7 +11806,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TaxiController
   driveSpeed: 7
-  stopDist: 5
+  stopDistInFront: 8
 --- !u!4 &374078273
 Transform:
   m_ObjectHideFlags: 0
@@ -77934,10 +77934,10 @@ MonoBehaviour:
   antSpacing: 0.55
   antSpeed: 0.5
   antMoveDir: {x: -1, y: 0, z: 0}
-  antScale: {x: 0.35, y: 0.12, z: 0.5}
+  antScale: {x: 0.18, y: 0.18, z: 0.18}
   sCurveAmplitude: 0.8
   sCurveFrequency: 1
-  antPrefab: {fileID: 0}
+  antPrefab: {fileID: 4002470688746227398, guid: c509295d6b3b94be383289019639d82b, type: 3}
   cameraTransform: {fileID: 0}
   playerTransform: {fileID: 0}
 --- !u!4 &1598488060
