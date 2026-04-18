@@ -90,9 +90,9 @@ public class GameManager : MonoBehaviour
                 break;
 
             case HighwayState.AntKilling:
-                // 전용 위치로 이동 → 카메라 아래 부드럽게 전환 → 밝은 조명 ON
-                if (sp_AntView != null) Teleport(sp_AntView);
+                // 현재 위치에서 이동 잠금 → 카메라 아래 부드럽게 전환 → 조명만 변경
                 if (playerController != null) playerController.SmoothLockCameraDown(0.5f);
+                EnableMovement(false);
                 SetAntLighting(true);
                 EnableSeg(seg_Ants);
                 break;

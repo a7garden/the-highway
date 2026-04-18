@@ -19,8 +19,9 @@ public class AntSystem : MonoBehaviour
     [Header("Ant Model")]
     public GameObject antPrefab;
 
-    [Header("Camera Reference")]
+    [Header("References")]
     public Transform cameraTransform;
+    public Transform playerTransform;
 
     private int killCount = 0;
     private int passedCount = 0;
@@ -34,6 +35,7 @@ public class AntSystem : MonoBehaviour
         killCount = 0; passedCount = 0; triggered = false;
         mainCam = Camera.main;
         cameraTransform = mainCam.transform;
+        playerTransform = GameManager.Instance != null ? GameManager.Instance.playerTransform : null;
         var old = new List<GameObject>();
         foreach (Transform c in transform) old.Add(c.gameObject);
         foreach (var c in old) Destroy(c);
@@ -50,17 +52,19 @@ public class AntSystem : MonoBehaviour
     void SpawnAnts()
     {
         Vector3 marchDir = antMoveDir.normalized;
-        Vector3 lateralDir = Vector3.Cross(marchDir, Vector3.up).normalized;
-        Vector3 camPos = cameraTransform != null ? cameraTransform.position : transform.position;
-        float spawnX = camPos.x + 8f;
-        float baseZ = camPos.z;
-        float baseY = camPos.y - 4f;
+        // 플레이어 위치를 기준으로 개미 스폰
+        Vector3 playerPos = playerTransform != null ? playerTransform.position : (cameraTransform != null ? cameraTransform.position : transform.position);
+
+        // 플레이어 기준 오른쪽(X+)에서 스폰, 왼쪽으로 이동
+        float spawnX = playerPos.x + 5f;
+        float baseZ = playerPos.z; // 플레이어와 같은 Z
+        float baseY = playerPos.y - 1f; //地面 (플레이어보다 약간 아래)
 
         Material fallbackMat = null;
         if (antPrefab == null)
         {
             fallbackMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            fallbackMat.color = new Color(0.05f, 0.03f, 0.02f);
+            fallbackMat.color = new Color(0.3f, 0.2f, 0.1f); // 갈색 개미
         }
 
         for (int i = 0; i < antCount; i++)
@@ -94,7 +98,7 @@ public class AntSystem : MonoBehaviour
             go.name = "Ant_"+i;
             var ab = go.AddComponent<AntBehavior>();
             ab.Setup(this, antSpeed, marchDir);
-            ab.SetPassThreshold(camPos.x - 10f);
+            ab.SetPassThreshold(playerPos.x - 10f);
             ants.Add(ab);
         }
     }
