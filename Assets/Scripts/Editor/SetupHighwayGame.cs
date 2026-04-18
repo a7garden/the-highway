@@ -153,7 +153,7 @@ public class SetupHighwayGame
         MakeCube("TaxiWheel3", new Vector3(2.8f, 0.3f, 242), new Vector3(0.4f, 0.7f, 0.7f), Color.black, segTaxi.transform);
         MakeCube("TaxiWheel4", new Vector3(0.2f, 0.3f, 242), new Vector3(0.4f, 0.7f, 0.7f), Color.black, segTaxi.transform);
         var taxiCtrl = segTaxi.AddComponent<TaxiController>();
-        taxiCtrl.driveSpeed = 7f; taxiCtrl.stopDist = 5f;
+        taxiCtrl.driveSpeed = 7f; taxiCtrl.stopDistInFront = 8f;
         segTaxi.SetActive(false);
         gm.seg_Taxi = segTaxi;
 

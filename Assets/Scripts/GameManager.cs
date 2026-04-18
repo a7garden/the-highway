@@ -91,6 +91,15 @@ public class GameManager : MonoBehaviour
                 StartCoroutine(WomanDisappearRoutine());
             }
         }
+
+        // Taxi 트리거: WalkToTaxi에서 앞으로 많이 걸으면 TaxiEncounter
+        if (State == HighwayState.WalkToTaxi && playerTransform != null)
+        {
+            if (playerTransform.position.z > 30f)
+            {
+                SetState(HighwayState.TaxiEncounter);
+            }
+        }
     }
 
     public void SetState(HighwayState next)
@@ -407,9 +416,9 @@ public class GameManager : MonoBehaviour
         }
         cameraTransform.localRotation = targetCamRot;
 
-        // 6) 플레이어 조작 복원, Intro 상태로
+        // 6) 플레이어 조작 복원, WalkToTaxi 상태로
         EnableMovement(true);
-        State = HighwayState.Intro;
+        State = HighwayState.WalkToTaxi;
     }
 
     IEnumerator EndingRoutine()
