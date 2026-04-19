@@ -63,6 +63,8 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public bool hasCamera;
     [HideInInspector] public bool hasGun;
 
+    private CameraSway _sway;
+
     void Awake()
     {
         if (Instance == null) Instance = this;
@@ -71,6 +73,9 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        _sway = cameraTransform != null ? cameraTransform.GetComponent<CameraSway>() : null;
+        _sway?.SetIntensity(1f, 0f);
+
         if (bgmSource) bgmSource.Play();
         // 개미 전용 조명은 처음엔 꺼둠
         if (antSunLight != null) antSunLight.enabled = false;
@@ -102,10 +107,76 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    static readonly System.Collections.Generic.HashSet<HighwayState> _cinematicStates =
+        new System.Collections.Generic.HashSet<HighwayState>
+        {
+            HighwayState.AntKilling, HighwayState.WomanCutscene,
+            HighwayState.Room1, HighwayState.BodyScene, HighwayState.HospitalScene,
+            HighwayState.BloodyRoad, HighwayState.DrawerScene, HighwayState.CorpseRoad,
+            HighwayState.HouseScene, HighwayState.MonsterFight, HighwayState.Ending
+        };
+
     public void SetState(HighwayState next)
+    {
+        if (_cinematicStates.Contains(next) && Director.Instance != null)
+            StartCoroutine(TransitionTo(next));
+        else
+            ApplyState(next);
+    }
+
+    IEnumerator TransitionTo(HighwayState next)
+    {
+        yield return StartCoroutine(Director.Instance.FadeOut(0.4f));
+        ApplyState(next);
+        yield return new WaitForSecondsRealtime(0.15f);
+
+        if (next == HighwayState.Ending) yield break;
+
+        if (next == HighwayState.AntKilling)
+        {
+            Director.Instance.SetOverlayColor(Color.white, 1f);
+            yield return new WaitForSecondsRealtime(0.02f);
+            yield return StartCoroutine(Director.Instance.FadeIn(0.8f));
+        }
+        else if (next == HighwayState.BloodyRoad)
+        {
+            Director.Instance.SetOverlayColor(new Color(0.8f, 0f, 0f), 1f);
+            yield return new WaitForSecondsRealtime(0.04f);
+            yield return StartCoroutine(Director.Instance.FadeIn(0.5f));
+        }
+        else
+        {
+            yield return StartCoroutine(Director.Instance.FadeIn(0.6f));
+        }
+    }
+
+    static float SwayIntensityFor(HighwayState s) => s switch
+    {
+        HighwayState.Intro          => 1.0f,
+        HighwayState.WalkToTaxi     => 1.0f,
+        HighwayState.WalkToBody     => 1.0f,
+        HighwayState.CameraPickup   => 1.0f,
+        HighwayState.Room1          => 1.0f,
+        HighwayState.AntKilling     => 1.3f,
+        HighwayState.WomanCutscene  => 1.2f,
+        HighwayState.WomanDisappear => 1.2f,
+        HighwayState.TaxiEncounter  => 1.2f,
+        HighwayState.BodyScene      => 1.2f,
+        HighwayState.HospitalScene  => 1.1f,
+        HighwayState.BloodyRoad     => 1.5f,
+        HighwayState.DrawerScene    => 1.2f,
+        HighwayState.CorpseRoad     => 1.4f,
+        HighwayState.HouseScene     => 1.4f,
+        HighwayState.MonsterFight   => 1.8f,
+        HighwayState.Ending         => 0.6f,
+        _                           => 1.0f,
+    };
+
+    void ApplyState(HighwayState next)
     {
         DisableAllSegments();
         State = next;
+        _sway?.SetIntensity(SwayIntensityFor(next), 2.5f);
 
         switch (next)
         {
@@ -423,7 +494,11 @@ public class GameManager : MonoBehaviour
 
     IEnumerator EndingRoutine()
     {
-        yield return new WaitForSeconds(1f);
+        // Slow fade to black, then ending text over it (DialogueCanvas sortingOrder=10000 > Director's 9999)
+        if (Director.Instance != null)
+            yield return StartCoroutine(Director.Instance.FadeOut(3f));
+        else
+            yield return new WaitForSeconds(1f);
         DialogueManager.Instance?.ShowDialogue("괴물은 쓰러졌다.");
         yield return new WaitForSeconds(3f);
         DialogueManager.Instance?.ShowDialogue("도로는 다시 조용해졌다.");

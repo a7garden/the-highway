@@ -22,6 +22,7 @@ public class MonsterAI : MonoBehaviour
     IEnumerator ChargeRoutine()
     {
         DialogueManager.Instance?.ShowDialogue("..!!");
+        GameManager.Instance?.cameraTransform?.GetComponent<CameraSway>()?.Pulse(peakMultiplier: 2.2f, attackSeconds: 0.12f, sustainSeconds: 0.25f, releaseSeconds: 0.8f);
         yield return new WaitForSeconds(chargeDelay);
         charging = true;
         GameManager.Instance?.EnableMovement(false);

@@ -23,6 +23,8 @@ public class HorrorPlayerController : MonoBehaviour
     private float _verticalRot = 0f;
     private bool _cursorLocked = true;
 
+    public float VerticalRotation => _verticalRot;
+
     void Start()
     {
         _cc = GetComponent<CharacterController>();

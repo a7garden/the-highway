@@ -16,6 +16,7 @@ public class BodyNPC : MonoBehaviour, IInteractable
     {
         yield return new WaitForSeconds(1f);
         foreach (var l in lines) { DialogueManager.Instance?.ShowDialogue(l); yield return new WaitForSeconds(2.5f); }
+        GameManager.Instance?.cameraTransform?.GetComponent<CameraSway>()?.Pulse(1.8f, 0.08f, 0.15f, 0.6f);
         dead = true;
         transform.localScale = new Vector3(transform.localScale.x, 0.08f, transform.localScale.z);
         DialogueManager.Instance?.ShowDialogue("...사망했다.");
