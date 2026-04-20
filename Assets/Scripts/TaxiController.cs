@@ -5,7 +5,7 @@ public class TaxiController : MonoBehaviour
 {
     [Header("Settings")]
     public float driveSpeed = 10f;
-    public float stopDistInFront = 8f; // 플레이어 앞쪽에서 멈출 거리
+    public float stopDistInFront = 8f;
 
     private Transform player;
     private Transform cameraTransform;
@@ -34,26 +34,23 @@ public class TaxiController : MonoBehaviour
     {
         running = true;
 
-        // 플레이어 Ahead(앞쪽) 도로 위에 택시 스폰
         if (player == null) yield break;
 
         Vector3 spawnPos = player.position + player.forward * 50f;
-        spawnPos.y = player.position.y; // 같은 높이
+        spawnPos.y = player.position.y;
         transform.position = spawnPos;
-        transform.forward = -player.forward; // 플레이어를 향해
+        transform.forward = -player.forward;
 
         EnableSeg(gameObject);
 
-        // ── 1) 택시가 플레이어 앞쪽에서 멈출 때까지 접근 ──
         while (player != null)
         {
             Vector3 d = player.position - transform.position;
             d.y = 0;
             if (d.magnitude <= stopDistInFront)
             {
-                // 정지
                 transform.position = player.position - player.forward * stopDistInFront;
-                transform.forward = player.forward; // 진행 방향 = 플레이어 반대편
+                transform.forward = player.forward;
                 break;
             }
             transform.position += d.normalized * driveSpeed * Time.deltaTime;
@@ -61,18 +58,74 @@ public class TaxiController : MonoBehaviour
             yield return null;
         }
 
-        // ── 2) 카메라가 택시를 향해 회전 ──
         if (cameraTransform != null && playerController != null)
         {
             playerController.SmoothLookAt(transform.position, 1f);
             yield return new WaitForSeconds(1.5f);
         }
 
-        // ── 3) 5초간 멈춰 있음 ──
-        yield return new WaitForSeconds(5f);
+        // driver dialogue
+        if (DialogueManager.Instance != null)
+        {
+            yield return StartCoroutine(DialogueManager.Instance.PlayLinesCoroutine(
+                "운전기사: ...",
+                "운전기사: 혹시 저 아래에서, 여자 한 명 못 봤소?",
+                "운전기사: 피를 흘리면서 뛰어가는 여자…"
+            ));
+        }
 
-        // ── 4) 택시가 플레이어 뒤쪽(시야 밖)으로Driving away ──
-        Vector3 awayDir = -transform.forward; // 현재 forward의 반대 = 원래 왔던 방향
+        // unlock cursor so choice buttons are clickable
+        playerController?.SetCursorLock(false);
+
+        bool chose = false;
+        bool yes = false;
+
+        var choiceUI = UnityEngine.Object.FindObjectOfType<ChoiceUI>(true);
+        if (choiceUI != null)
+        {
+            choiceUI.Show(
+                "뭐라고 대답할까?",
+                "봤습니다",
+                "못 봤습니다",
+                () => { yes = true;  chose = true; },
+                () => { yes = false; chose = true; }
+            );
+            yield return new WaitUntil(() => chose);
+        }
+        else
+        {
+            chose = true;
+        }
+
+        playerController?.SetCursorLock(true);
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.playerSaidYesToTaxi = yes;
+
+        if (yes)
+        {
+            if (DialogueManager.Instance != null)
+            {
+                yield return StartCoroutine(DialogueManager.Instance.PlayLinesCoroutine(
+                    "운전기사: ...그래.",
+                    "운전기사: 피곤해 보여. 이거 받아 둬.",
+                    "(운전기사가 창밖으로 담배 한 개비를 떨어뜨린다.)"
+                ));
+            }
+        }
+        else
+        {
+            if (DialogueManager.Instance != null)
+            {
+                yield return StartCoroutine(DialogueManager.Instance.PlayLinesCoroutine(
+                    "운전기사: 그래... 조심히 가."
+                ));
+            }
+        }
+
+        SpawnCigarette();
+
+        Vector3 awayDir = -transform.forward;
         float elapsed = 0f;
         float duration = 3f;
         Vector3 startPos = transform.position;
@@ -85,17 +138,31 @@ public class TaxiController : MonoBehaviour
             yield return null;
         }
 
-        // ── 5) 택시 비활성화 ──
         DisableSeg(gameObject);
 
-        // ── 6) 플레이어 조작 복원, Room1로 ──
-        if (GameManager.Instance != null)
+        // cigarette pickup handles SetState(Room1); restore movement only
+        GameManager.Instance?.EnableMovement(true);
+    }
+
+    void SpawnCigarette()
+    {
+        if (player == null) return;
+
+        // drop the cigarette just behind the taxi (from driver's window), slightly toward player's right
+        Vector3 dropPos = transform.position - transform.forward * 1.5f + player.right * 0.8f;
+        dropPos.y = player.position.y + 0.05f;
+
+        foreach (var item in UnityEngine.Object.FindObjectsOfType<PickupItem>(true))
         {
-            GameManager.Instance.EnableMovement(true);
-            GameManager.Instance.SetState(HighwayState.Room1);
+            if (item.gameObject.name == "RoadCigarette")
+            {
+                item.transform.position = dropPos;
+                item.gameObject.SetActive(true);
+                return;
+            }
         }
     }
 
-    void EnableSeg(GameObject s) { if (s != null) s.SetActive(true); }
+    void EnableSeg(GameObject s)  { if (s != null) s.SetActive(true); }
     void DisableSeg(GameObject s) { if (s != null) s.SetActive(false); }
 }

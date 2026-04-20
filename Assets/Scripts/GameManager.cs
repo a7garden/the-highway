@@ -84,19 +84,6 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // Woman NPC proximity check
-        if (State == HighwayState.Intro && seg_WomanNPC != null && seg_WomanNPC.activeInHierarchy && playerTransform != null)
-        {
-            float dist = Vector3.Distance(playerTransform.position, seg_WomanNPC.transform.position);
-            if (dist < 5f)
-            {
-                // NPC 떠나기 이벤트 시작 (카메라가 NPC를 바라보게 함)
-                EnableMovement(false);
-                State = HighwayState.WomanDisappear;
-                StartCoroutine(WomanDisappearRoutine());
-            }
-        }
-
         // Taxi 트리거: WalkToTaxi에서 앞으로 많이 걸으면 TaxiEncounter
         if (State == HighwayState.WalkToTaxi && playerTransform != null)
         {
@@ -104,6 +91,29 @@ public class GameManager : MonoBehaviour
             {
                 SetState(HighwayState.TaxiEncounter);
             }
+        }
+
+        // WalkToBody 트리거: 시체 근처까지 걸으면 BodyScene
+        if (State == HighwayState.WalkToBody && playerTransform != null && seg_BodyNPC != null)
+        {
+            var body = seg_BodyNPC.transform.Find("BodyNPC");
+            if (body != null && Vector3.Distance(playerTransform.position, body.position) < 4f)
+                SetState(HighwayState.BodyScene);
+        }
+
+        // CorpseRoad 트리거: 집 근처까지 걸으면 HouseScene
+        if (State == HighwayState.CorpseRoad && playerTransform != null)
+        {
+            if (playerTransform.position.z > 320f)
+                SetState(HighwayState.HouseScene);
+        }
+
+        // HouseScene 트리거: 의자에 가까이 가면 MonsterFight
+        if (State == HighwayState.HouseScene && playerTransform != null && seg_House != null)
+        {
+            var chair = seg_House.transform.Find("Chair");
+            if (chair != null && Vector3.Distance(playerTransform.position, chair.position) < 3.5f)
+                SetState(HighwayState.MonsterFight);
         }
     }
 
@@ -200,7 +210,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case HighwayState.WomanDisappear:
-                // Update에서 StartCoroutine(WomanDisappearRoutine()) 호출
+                // WomanNPC handles its own sequence via IInteractable
                 break;
 
             case HighwayState.WalkToTaxi:
@@ -220,7 +230,6 @@ public class GameManager : MonoBehaviour
                 Teleport(sp_Room1);
                 EnableSeg(seg_Room1);
                 EnableMovement(true);
-                DialogueManager.Instance?.ShowDialogue("...");
                 break;
 
             case HighwayState.WalkToBody:
@@ -278,14 +287,18 @@ public class GameManager : MonoBehaviour
                 break;
             }
             case HighwayState.HouseScene:
-                EnableMovement(true);
+                Teleport(sp_House);
                 EnableSeg(seg_House);
+                EnableSeg(seg_Monster);  // monster sits in chair, not yet charging
+                EnableMovement(true);
+                DialogueManager.Instance?.ShowDialogue("...누군가 의자에 앉아 있다.", 3.5f);
                 break;
 
             case HighwayState.MonsterFight:
             {
-                EnableMovement(false);
+                EnableSeg(seg_House);  // keep room visible during charge
                 EnableSeg(seg_Monster);
+                EnableMovement(false);
                 var m = seg_Monster != null ? seg_Monster.GetComponentInChildren<MonsterAI>() : null;
                 if (m != null) m.StartCharge();
                 break;
@@ -331,19 +344,27 @@ public class GameManager : MonoBehaviour
 
     System.Collections.IEnumerator EndAntEventRoutine()
     {
-        if (playerController != null)
-            playerController.SmoothUnlockCamera(0.5f);
-        yield return new WaitForSeconds(0.6f);
         DisableSeg(seg_Ants);
+
+        // ── Mother silhouette cutscene: still in bright ant lighting ──
+        yield return StartCoroutine(MotherSilhouetteSequence());
+
+        // ── Hard cut back to dark road ──
+        if (Director.Instance != null)
+            yield return StartCoroutine(Director.Instance.FadeOut(0.6f));
+
+        DisableSeg(seg_CutsceneWoman);
         SetAntLighting(false);
 
-        // Woman NPC를 플레이어 앞쪽 도로 우측에 스폰
+        if (playerController != null) playerController.UnlockCamera();
+
+        // Spawn bleeding woman ahead on the road
         if (seg_WomanNPC != null && playerTransform != null)
         {
             Vector3 npcPos = new Vector3(5f, playerTransform.position.y, playerTransform.position.z + 20f);
             seg_WomanNPC.transform.position = npcPos;
 
-            // AI 스크립트 비활성화를 먼저 (SetActive보다 먼저)
+            // Disable any prior AI scripts before activating visual
             var aiScripts = seg_WomanNPC.GetComponentsInChildren<UnityEngine.MonoBehaviour>(true);
             foreach (var s in aiScripts)
             {
@@ -353,14 +374,47 @@ public class GameManager : MonoBehaviour
             }
 
             EnableSeg(seg_WomanNPC);
-
-            // 기존 Visual child들 제거하고 box로 교체
             ReplaceNpcVisual(seg_WomanNPC.transform);
+
+            var womanNpc = seg_WomanNPC.GetComponentInChildren<WomanNPC>(true);
+            if (womanNpc != null) womanNpc.StartSequence();
         }
 
+        if (Director.Instance != null)
+            yield return StartCoroutine(Director.Instance.FadeIn(0.8f));
+
         EnableMovement(true);
-        // 상태를 Intro로 (단, 텔레포트 없이 현재 위치 유지)
         State = HighwayState.Intro;
+    }
+
+    // Mother silhouette: camera tilts up, backlit silhouette against bright sky,
+    // mother calls out. Keeps AntKilling lighting/camera state intact.
+    IEnumerator MotherSilhouetteSequence()
+    {
+        if (seg_CutsceneWoman == null || playerTransform == null || playerController == null)
+            yield break;
+
+        // Position silhouette above and in front of player so upward tilt frames it
+        Vector3 silPos = playerTransform.position + playerTransform.forward * 4f + Vector3.up * 0f;
+        seg_CutsceneWoman.transform.position = silPos;
+        EnableSeg(seg_CutsceneWoman);
+
+        // Tilt camera up toward silhouette's head
+        Vector3 headTarget = silPos + Vector3.up * 9.5f;
+        playerController.SmoothLookAt(headTarget, 1.2f);
+        yield return new WaitForSeconds(1.4f);
+
+        if (DialogueManager.Instance != null)
+        {
+            yield return StartCoroutine(DialogueManager.Instance.PlayLinesCoroutine(
+                "<i>엄마: ...어디 있니.</i>",
+                "<i>엄마: 이리 와.</i>",
+                "<i>엄마: ...왜 거기 있어.</i>",
+                "<i>엄마: 이리 오라니까.</i>"
+            ));
+        }
+
+        yield return new WaitForSeconds(0.6f);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -397,6 +451,9 @@ public class GameManager : MonoBehaviour
         var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         mat.color = new Color(0.9f, 0.7f, 0.6f); // 살구색
         npc.GetComponent<Renderer>().material = mat;
+
+        // WomanNPC 컴포넌트 부착 (IInteractable + CapsuleCollider 공존)
+        npc.AddComponent<WomanNPC>();
     }
 
     public void Teleport(Transform t)
@@ -435,61 +492,6 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
         SetState(HighwayState.Intro);
-    }
-
-    // ── 여자 NPC 사라지는 이벤트 ─────────────────────────────────────
-    IEnumerator WomanDisappearRoutine()
-    {
-        if (seg_WomanNPC == null || playerController == null || cameraTransform == null)
-        {
-            EnableMovement(true);
-            State = HighwayState.Intro;
-            yield break;
-        }
-
-        Vector3 npcPos = seg_WomanNPC.transform.position;
-
-        // 1) 카메라가 NPC 위치로 부드럽게 회전
-        playerController.SmoothLookAt(npcPos, 1f);
-        yield return new WaitForSeconds(1.5f); // 카메라 회전 완료 대기
-
-        // 2) 5초간 NPC 응시 (카메라 고정)
-        yield return new WaitForSeconds(5f);
-
-        // 3) NPC가 플레이어 뒤/시야 밖으로 부드럽게 이동
-        Vector3 awayDir = (playerTransform.position - npcPos).normalized;
-        // NPC를 플레이어 반대편 + 약간 뒤로 이동
-        Vector3 targetPos = playerTransform.position + awayDir * 30f + new Vector3(0f, 0f, -10f);
-        float duration = 2f;
-        float elapsed = 0f;
-        Vector3 startPos = seg_WomanNPC.transform.position;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            seg_WomanNPC.transform.position = Vector3.Lerp(startPos, targetPos, t);
-            yield return null;
-        }
-
-        // 4) NPC 비활성화
-        DisableSeg(seg_WomanNPC);
-
-        // 5) 카메라가 다시 앞을 바라보게 (플레이어 방향)
-        Quaternion targetCamRot = Quaternion.Euler(0f, 0f, 0f);
-        float camElapsed = 0f;
-        Quaternion camStart = cameraTransform.localRotation;
-        while (camElapsed < 1f)
-        {
-            camElapsed += Time.deltaTime;
-            cameraTransform.localRotation = Quaternion.Slerp(camStart, targetCamRot, camElapsed);
-            yield return null;
-        }
-        cameraTransform.localRotation = targetCamRot;
-
-        // 6) 플레이어 조작 복원, WalkToTaxi 상태로
-        EnableMovement(true);
-        State = HighwayState.WalkToTaxi;
     }
 
     IEnumerator EndingRoutine()

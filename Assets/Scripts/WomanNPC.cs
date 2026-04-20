@@ -1,24 +1,28 @@
 using UnityEngine;
 using System.Collections;
 
-public class WomanNPC : MonoBehaviour
+public class WomanNPC : MonoBehaviour, IInteractable
 {
     [Header("Dialogue")]
     public string[] lines = new string[]
     {
-        "거기 멈춰요!",
-        "저쪽은 위험해요...",
-        "괴물이 있어요. 진짜예요.",
-        "빨리 도망치세요...",
-        "...제발."
+        "괴물이 있어요.",
+        "...내 안에.",
+        "가지 마세요.",
+        "살려주세요...",
+        "제발."
     };
 
     [Header("Movement")]
     public float walkSpeed = 1.3f;
     public float erraticSpeed = 2f;
 
+    // IInteractable
+    public string InteractPrompt => _awaitingClick ? "말을 건다" : "";
+
     private Transform player;
     private Animator _anim;
+    private bool _awaitingClick = false;
 
     void Start()
     {
@@ -26,10 +30,18 @@ public class WomanNPC : MonoBehaviour
         _anim  = GetComponentInChildren<Animator>();
     }
 
+    // IInteractable.OnInteract — called by InteractionSystem on click
+    public void OnInteract()
+    {
+        if (!_awaitingClick) return;
+        _awaitingClick = false;
+        StartCoroutine(DialogueAndLeaveRoutine());
+    }
+
     void SetAnim(bool walking)
     {
         if (_anim == null) return;
-        // polyperfect Base Controller 파라미터: "Walking" bool 또는 "Speed" float
+        // polyperfect Base Controller: "Walking" bool or "Speed" float
         if (_anim.parameters.Length > 0)
         {
             foreach (var p in _anim.parameters)
@@ -42,11 +54,11 @@ public class WomanNPC : MonoBehaviour
         }
     }
 
-    public void StartSequence() { StartCoroutine(WomanRoutine()); }
+    public void StartSequence() { StartCoroutine(ApproachRoutine()); }
 
-    IEnumerator WomanRoutine()
+    IEnumerator ApproachRoutine()
     {
-        // Walk toward player
+        // Walk toward player until close enough
         SetAnim(true);
         while (player != null && Vector3.Distance(transform.position, player.position) > 2.8f)
         {
@@ -57,13 +69,15 @@ public class WomanNPC : MonoBehaviour
         }
         SetAnim(false);
 
-        // Dialogue
+        // Stop and wait for player click
+        _awaitingClick = true;
+    }
+
+    IEnumerator DialogueAndLeaveRoutine()
+    {
+        // Click-advance dialogue (Paratopic style)
         GameManager.Instance?.EnableMovement(false);
-        foreach (var line in lines)
-        {
-            DialogueManager.Instance?.ShowDialogue(line);
-            yield return new WaitForSeconds(2.4f);
-        }
+        yield return DialogueManager.Instance.PlayLinesCoroutine(lines);
         GameManager.Instance?.EnableMovement(true);
 
         // Walk away erratically
