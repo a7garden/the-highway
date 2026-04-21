@@ -29,7 +29,7 @@ public class CameraItem : MonoBehaviour, IInteractable
     {
         cam = Camera.main;
         if (cam != null) normalFOV = cam.fieldOfView;
-        interSys = FindObjectOfType<InteractionSystem>();
+        interSys = FindFirstObjectByType<InteractionSystem>();
     }
 
     void Update()

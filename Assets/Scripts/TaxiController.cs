@@ -80,7 +80,7 @@ public class TaxiController : MonoBehaviour
         bool chose = false;
         bool yes = false;
 
-        var choiceUI = UnityEngine.Object.FindObjectOfType<ChoiceUI>(true);
+        var choiceUI = FindFirstObjectByType<ChoiceUI>(FindObjectsInactive.Include);
         if (choiceUI != null)
         {
             choiceUI.Show(
@@ -152,7 +152,7 @@ public class TaxiController : MonoBehaviour
         Vector3 dropPos = transform.position - transform.forward * 1.5f + player.right * 0.8f;
         dropPos.y = player.position.y + 0.05f;
 
-        foreach (var item in UnityEngine.Object.FindObjectsOfType<PickupItem>(true))
+        foreach (var item in FindObjectsByType<PickupItem>(FindObjectsSortMode.None))
         {
             if (item.gameObject.name == "RoadCigarette")
             {

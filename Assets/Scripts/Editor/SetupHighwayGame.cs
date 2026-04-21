@@ -72,7 +72,7 @@ public class SetupHighwayGame
         MeshRenderer roadRenderer = roadGO != null ? roadGO.GetComponent<MeshRenderer>() : null;
 
         // ── GameManager ───────────────────────────────────────────────
-        var existingGM = Object.FindObjectOfType<GameManager>();
+        var existingGM = Object.FindFirstObjectByType<GameManager>();
         if (existingGM != null) Object.DestroyImmediate(existingGM.gameObject);
 
         var gmGO = MakeGO("GameManager");
