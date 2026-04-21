@@ -57,3 +57,6 @@
 
 # Crashlytics
 /[Aa]ssets/External/Crashlytics/
+
+# Claude Code
+/.claude/
