@@ -33,7 +33,7 @@ public class InteractionSystem : MonoBehaviour
 
     void CheckForInteractable()
     {
-        if (_cam == null) return;
+        if (_cam == null || interactableLayer == 0) return;
 
         Ray ray = new Ray(_cam.transform.position, _cam.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
