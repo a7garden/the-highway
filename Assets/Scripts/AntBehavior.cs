@@ -76,6 +76,7 @@ public class AntBehavior : MonoBehaviour
     {
         float t=0f; Vector3 s0=transform.localScale;
         while (t<0.25f) { t+=Time.deltaTime; transform.localScale=Vector3.Lerp(s0,Vector3.zero,t/0.25f); yield return null; }
+        if (outlineLR != null && outlineLR.material != null) Destroy(outlineLR.material);
         Destroy(gameObject);
     }
 }

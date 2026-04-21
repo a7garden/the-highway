@@ -116,9 +116,9 @@ public class DialogueManager : MonoBehaviour
         {
             yield return TypeLine(line);
 
-            // one-frame gap so the click that ended typing isn't re-consumed here
-            yield return null;
-
+            // TypeLine에서 클릭 스킵 시, 해당 프레임의 wasPressedThisFrame을 소비하기 위해
+            // 버튼이 놓일 때까지 대기한 뒤, 새로운 클릭을 기다림
+            yield return new WaitUntil(() => !Mouse.current.leftButton.isPressed);
             yield return new WaitUntil(() => Mouse.current.leftButton.wasPressedThisFrame);
         }
 

@@ -196,7 +196,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case HighwayState.AntKilling:
-                // 현재 위치에서 이동 잠금 → 카메라 아래 부드럽게 전환 → 조명만 변경
+                // 카메라 아래 부드럽게 전환 → 이동 잠금 (코루틴이 먼저 시작되어야 함)
                 if (playerController != null) playerController.SmoothLockCameraDown(0.5f);
                 EnableMovement(false);
                 SetAntLighting(true);
@@ -472,7 +472,7 @@ public class GameManager : MonoBehaviour
 
     public void EnableMovement(bool on)
     {
-        if (playerController != null) playerController.enabled = on;
+        if (playerController != null) playerController.movementLocked = !on;
     }
 
     IEnumerator WomanCutsceneRoutine()

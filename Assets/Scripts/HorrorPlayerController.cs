@@ -17,6 +17,11 @@ public class HorrorPlayerController : MonoBehaviour
 
     // 카메라 잠금 (개미 구간용)
     [HideInInspector] public bool cameraLocked = false;
+    [Header("Ant View Look")]
+    [Range(0f, 30f)] public float antLookRange = 10f; // 개미 구간에서 허용할 카메라 움직임 범위(도)
+
+    // 이동 잠금 전용 (Update() 전체를 비활성화하지 않기 위해)
+    [HideInInspector] public bool movementLocked = false;
 
     private CharacterController _cc;
     private Vector3 _velocity;
@@ -41,23 +46,35 @@ public class HorrorPlayerController : MonoBehaviour
         if (keyboard.escapeKey.wasPressedThisFrame)
             SetCursorLock(!_cursorLocked);
 
-        // 마우스 시점 (잠금 중이면 무시)
-        if (_cursorLocked && !cameraLocked)
+        // 마우스 시점
+        if (_cursorLocked)
         {
             Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
             transform.Rotate(Vector3.up * delta.x);
             _verticalRot -= delta.y;
-            _verticalRot = Mathf.Clamp(_verticalRot, -verticalClampAngle, verticalClampAngle);
-            if (cameraTransform != null)
-                cameraTransform.localRotation = Quaternion.Euler(_verticalRot, 0f, 0f);
+
+            if (cameraLocked)
+            {
+                // 개미 구간: 기본 90도에서 antLookRange 내에서만 카메라 움직임 허용
+                float basePitch = 90f;
+                _verticalRot = Mathf.Clamp(_verticalRot, basePitch - antLookRange, basePitch + antLookRange);
+                if (cameraTransform != null)
+                    cameraTransform.localRotation = Quaternion.Euler(_verticalRot, 0f, 0f);
+            }
+            else
+            {
+                _verticalRot = Mathf.Clamp(_verticalRot, -verticalClampAngle, verticalClampAngle);
+                if (cameraTransform != null)
+                    cameraTransform.localRotation = Quaternion.Euler(_verticalRot, 0f, 0f);
+            }
         }
 
         // 중력
         if (_cc.isGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
 
-        // WASD 이동 (카메라 잠금 중엔 이동도 막음)
-        if (!cameraLocked)
+        // WASD 이동 (movementLocked이면 막음)
+        if (!movementLocked)
         {
             float h = 0f, v = 0f;
             if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) h += 1f;
@@ -93,6 +110,11 @@ public class HorrorPlayerController : MonoBehaviour
     /// <summary>카메라를 아래 방향으로 부드럽게 전환</summary>
     public void SmoothLockCameraDown(float duration = 0.5f)
     {
+        // 즉시 잠금 플래그 설정 (enabled=false 이후에도 카메라 회전 허용하기 위해)
+        cameraLocked = true;
+        _verticalRot = 90f;
+        if (cameraTransform != null)
+            cameraTransform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         StartCoroutine(SmoothCameraDownRoutine(duration));
     }
 
