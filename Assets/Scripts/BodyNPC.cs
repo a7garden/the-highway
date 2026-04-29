@@ -15,19 +15,25 @@ public class BodyNPC : MonoBehaviour, IInteractable
     IEnumerator BodyRoutine()
     {
         yield return new WaitForSeconds(1f);
-        foreach (var l in lines) { DialogueManager.Instance?.ShowDialogue(l); yield return new WaitForSeconds(2.5f); }
+
+        // dying man click-advance dialogue
+        if (DialogueManager.Instance != null && lines != null && lines.Length > 0)
+            yield return DialogueManager.Instance.PlayLinesCoroutine(lines);
+
+        // death pulse + collapse
         GameManager.Instance?.cameraTransform?.GetComponent<CameraSway>()?.Pulse(1.8f, 0.08f, 0.15f, 0.6f);
         dead = true;
         transform.localScale = new Vector3(transform.localScale.x, 0.08f, transform.localScale.z);
-        DialogueManager.Instance?.ShowDialogue("...사망했다.");
-        yield return new WaitForSeconds(1.5f);
-        DialogueManager.Instance?.ShowDialogue("[ 시체를 조사할 수 있다 ]");
+
+        DialogueManager.Instance?.ShowDialogue("...사망했다.", 2.0f);
+        yield return new WaitForSeconds(2.0f);
+        DialogueManager.Instance?.ShowDialogue("[ 시체를 조사할 수 있다 ]", 4f);
     }
 
     public void OnInteract()
     {
         if (!dead) return;
-        DialogueManager.Instance?.ShowDialogue("카메라를 발견했다.");
+        DialogueManager.Instance?.ShowDialogue("카메라를 발견했다.", 2f);
         GameManager.Instance?.SetState(HighwayState.CameraPickup);
         gameObject.SetActive(false);
     }

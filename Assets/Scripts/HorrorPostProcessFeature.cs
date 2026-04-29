@@ -40,6 +40,12 @@ public class HorrorPostProcessFeature : ScriptableRendererFeature
     private HorrorPostProcessPass m_Pass;
     private Material m_Material;
 
+    /// <summary>
+    /// Runtime override for glitch enable. null = use settings, true/false = force.
+    /// Set from gameplay code (e.g. AntKilling state) to suppress glitch in bright scenes.
+    /// </summary>
+    public static bool? GlitchRuntimeOverride = null;
+
     public override void Create()
     {
         var shader = Shader.Find("Hidden/HorrorPostProcess");
@@ -87,7 +93,8 @@ internal class HorrorPostProcessPass : ScriptableRenderPass
     {
         m_Mat.SetInt  (K_EnablePx,  m_Cfg.enablePixelize ? 1 : 0);
         m_Mat.SetFloat(K_PxWidth,   m_Cfg.pixelWidth);
-        m_Mat.SetInt  (K_EnableGl,  m_Cfg.enableGlitch ? 1 : 0);
+        bool glitchOn = HorrorPostProcessFeature.GlitchRuntimeOverride ?? m_Cfg.enableGlitch;
+        m_Mat.SetInt  (K_EnableGl,  glitchOn ? 1 : 0);
         m_Mat.SetFloat(K_GlInt,     m_Cfg.glitchIntensity);
         m_Mat.SetFloat(K_GlSpeed,   m_Cfg.glitchSpeed);
         m_Mat.SetFloat(K_GlBand,    m_Cfg.glitchBandSize);

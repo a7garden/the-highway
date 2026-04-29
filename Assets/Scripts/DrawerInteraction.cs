@@ -15,14 +15,20 @@ public class DrawerInteraction : MonoBehaviour, IInteractable
 
     IEnumerator OpenRoutine()
     {
+        // slide drawer out
         float t = 0f;
         Vector3 s = transform.localPosition;
         Vector3 e = s + Vector3.forward * 0.35f;
         while (t < 0.5f) { t += Time.deltaTime * 2f; transform.localPosition = Vector3.Lerp(s, e, t); yield return null; }
-        DialogueManager.Instance?.ShowDialogue("서랍 안에 총이 있다.");
-        yield return new WaitForSeconds(1.5f);
-        DialogueManager.Instance?.ShowDialogue("총을 집어들었다.");
-        yield return new WaitForSeconds(1f);
+
+        if (DialogueManager.Instance != null)
+        {
+            yield return DialogueManager.Instance.PlayLinesCoroutine(
+                "서랍 안에 총이 있다.",
+                "총을 집어들었다."
+            );
+        }
+
         GameManager.Instance?.SetState(HighwayState.CorpseRoad);
     }
 }

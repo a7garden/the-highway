@@ -108,23 +108,33 @@ public class AntSystem : MonoBehaviour
     void Update()
     {
         if (mainCam==null) return;
-        Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = mainCam.ScreenPointToRay(mousePos);
-        RaycastHit hit;
+
+        // Center-line targeting: pick the live ant closest to screen center.
+        // No mouse aim — the ant currently passing through the crosshair is highlighted.
+        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
         AntBehavior newHover = null;
-        if (Physics.Raycast(ray, out hit, 300f))
+        float bestDist = 120f * 120f;  // squared px threshold (~120px tolerance)
+        for (int i = 0; i < ants.Count; i++)
         {
-            var ab = hit.collider.GetComponentInParent<AntBehavior>();
-            if (ab!=null && !ab.IsDead) newHover=ab;
+            var ab = ants[i];
+            if (ab == null || ab.IsDead) continue;
+            Vector3 sp = mainCam.WorldToScreenPoint(ab.transform.position);
+            if (sp.z <= 0f) continue;  // behind camera
+            float dx = sp.x - screenCenter.x;
+            float dy = sp.y - screenCenter.y;
+            float d2 = dx*dx + dy*dy;
+            if (d2 < bestDist) { bestDist = d2; newHover = ab; }
         }
+
         if (newHover != hoveredAnt)
         {
             if (hoveredAnt!=null) hoveredAnt.SetHover(false);
             hoveredAnt = newHover;
             if (hoveredAnt!=null) hoveredAnt.SetHover(true);
         }
-        if (Mouse.current.leftButton.wasPressedThisFrame && hoveredAnt!=null && !hoveredAnt.IsDead)
-        { hoveredAnt.Kill(); hoveredAnt=null; }
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame
+            && hoveredAnt != null && !hoveredAnt.IsDead)
+        { hoveredAnt.Kill(); hoveredAnt = null; }
 
         // Check if all ants passed (killed or off-screen)
         if (!triggered && passedCount >= antCount)

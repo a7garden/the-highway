@@ -65,6 +65,11 @@ public class GameManager : MonoBehaviour
 
     private CameraSway _sway;
 
+    // pre-AntKilling player pose, restored after EndAntEvent
+    private Vector3 _preAntPos;
+    private Quaternion _preAntRot;
+    private bool _hasPreAntPose;
+
     void Awake()
     {
         if (Instance == null) Instance = this;
@@ -117,47 +122,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    static readonly System.Collections.Generic.HashSet<HighwayState> _cinematicStates =
-        new System.Collections.Generic.HashSet<HighwayState>
-        {
-            HighwayState.AntKilling, HighwayState.WomanCutscene,
-            HighwayState.Room1, HighwayState.BodyScene, HighwayState.HospitalScene,
-            HighwayState.BloodyRoad, HighwayState.DrawerScene, HighwayState.CorpseRoad,
-            HighwayState.HouseScene, HighwayState.MonsterFight, HighwayState.Ending
-        };
-
+    // Paratopic-style: every state transition is an instant cut. No fades.
     public void SetState(HighwayState next)
     {
-        if (_cinematicStates.Contains(next) && Director.Instance != null)
-            StartCoroutine(TransitionTo(next));
-        else
-            ApplyState(next);
-    }
-
-    IEnumerator TransitionTo(HighwayState next)
-    {
-        yield return StartCoroutine(Director.Instance.FadeOut(0.4f));
         ApplyState(next);
-        yield return new WaitForSecondsRealtime(0.15f);
-
-        if (next == HighwayState.Ending) yield break;
-
-        if (next == HighwayState.AntKilling)
-        {
-            Director.Instance.SetOverlayColor(Color.white, 1f);
-            yield return new WaitForSecondsRealtime(0.02f);
-            yield return StartCoroutine(Director.Instance.FadeIn(0.8f));
-        }
-        else if (next == HighwayState.BloodyRoad)
-        {
-            Director.Instance.SetOverlayColor(new Color(0.8f, 0f, 0f), 1f);
-            yield return new WaitForSecondsRealtime(0.04f);
-            yield return StartCoroutine(Director.Instance.FadeIn(0.5f));
-        }
-        else
-        {
-            yield return StartCoroutine(Director.Instance.FadeIn(0.6f));
-        }
     }
 
     static float SwayIntensityFor(HighwayState s) => s switch
@@ -196,10 +164,18 @@ public class GameManager : MonoBehaviour
                 break;
 
             case HighwayState.AntKilling:
-                // 현재 위치에서 이동 잠금 → 카메라 아래 부드럽게 전환 → 조명만 변경
-                if (playerController != null) playerController.SmoothLockCameraDown(0.5f);
+                // save pose before teleport so we can restore on EndAntEvent
+                if (playerTransform != null)
+                {
+                    _preAntPos = playerTransform.position;
+                    _preAntRot = playerTransform.rotation;
+                    _hasPreAntPose = true;
+                }
+                Teleport(sp_AntView);                          // move onto sand area
+                if (playerController != null) playerController.SmoothLockCameraDown(0.0f);
                 EnableMovement(false);
                 SetAntLighting(true);
+                HorrorPostProcessFeature.GlitchRuntimeOverride = false;  // no glitch in bright sand scene
                 EnableSeg(seg_Ants);
                 break;
 
@@ -349,12 +325,20 @@ public class GameManager : MonoBehaviour
         // ── Mother silhouette cutscene: still in bright ant lighting ──
         yield return StartCoroutine(MotherSilhouetteSequence());
 
-        // ── Hard cut back to dark road ──
-        if (Director.Instance != null)
-            yield return StartCoroutine(Director.Instance.FadeOut(0.6f));
-
+        // Paratopic-style instant cut back to road
         DisableSeg(seg_CutsceneWoman);
         SetAntLighting(false);
+        HorrorPostProcessFeature.GlitchRuntimeOverride = null;  // restore glitch
+
+        // teleport player back to where they were before the ant scene
+        if (_hasPreAntPose && playerCC != null && playerTransform != null)
+        {
+            playerCC.enabled = false;
+            playerTransform.position = _preAntPos;
+            playerTransform.rotation = _preAntRot;
+            playerCC.enabled = true;
+            _hasPreAntPose = false;
+        }
 
         if (playerController != null) playerController.UnlockCamera();
 
@@ -379,9 +363,6 @@ public class GameManager : MonoBehaviour
             var womanNpc = seg_WomanNPC.GetComponentInChildren<WomanNPC>(true);
             if (womanNpc != null) womanNpc.StartSequence();
         }
-
-        if (Director.Instance != null)
-            yield return StartCoroutine(Director.Instance.FadeIn(0.8f));
 
         EnableMovement(true);
         State = HighwayState.Intro;
