@@ -29,6 +29,7 @@ public class AntSystem : MonoBehaviour
     private bool triggered = false;
     private Camera mainCam;
     private AntBehavior hoveredAnt = null;
+    private Material _fallbackMat;
 
     void OnEnable()
     {
@@ -47,6 +48,7 @@ public class AntSystem : MonoBehaviour
     {
         foreach (var a in ants) if (a != null) Destroy(a.gameObject);
         ants.Clear(); hoveredAnt = null;
+        if (_fallbackMat != null) { Destroy(_fallbackMat); _fallbackMat = null; }
     }
 
     void SpawnAnts()
@@ -60,11 +62,10 @@ public class AntSystem : MonoBehaviour
         float baseZ = playerPos.z; // 플레이어와 같은 Z
         float baseY = playerPos.y - 1f; //地面 (플레이어보다 약간 아래)
 
-        Material fallbackMat = null;
-        if (antPrefab == null)
+        if (antPrefab == null && _fallbackMat == null)
         {
-            fallbackMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            fallbackMat.color = new Color(0.3f, 0.2f, 0.1f); // 갈색 개미
+            _fallbackMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            _fallbackMat.color = new Color(0.3f, 0.2f, 0.1f); // 갈색 개미
         }
 
         for (int i = 0; i < antCount; i++)
@@ -93,7 +94,7 @@ public class AntSystem : MonoBehaviour
                 go.transform.localScale = antScale;
                 float _yAngle = Mathf.Atan2(marchDir.x, marchDir.z) * Mathf.Rad2Deg;
                 go.transform.rotation = Quaternion.Euler(270f, _yAngle, 0f);
-                go.GetComponent<MeshRenderer>().material = fallbackMat;
+                go.GetComponent<MeshRenderer>().material = _fallbackMat;
                 Destroy(go.GetComponent<BoxCollider>());
                 var sc=go.AddComponent<SphereCollider>(); sc.radius=0.25f/antScale.x;
             }

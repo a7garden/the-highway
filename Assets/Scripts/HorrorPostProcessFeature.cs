@@ -48,6 +48,7 @@ public class HorrorPostProcessFeature : ScriptableRendererFeature
 
     public override void Create()
     {
+        if (m_Material != null) return; // already created
         var shader = Shader.Find("Hidden/HorrorPostProcess");
         if (shader == null) { Debug.LogWarning("[HorrorPostProcess] Shader not found!"); return; }
         m_Material = CoreUtils.CreateEngineMaterial(shader);

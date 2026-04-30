@@ -80,7 +80,7 @@ public class TaxiController : MonoBehaviour
         bool chose = false;
         bool yes = false;
 
-        var choiceUI = UnityEngine.Object.FindObjectOfType<ChoiceUI>(true);
+        var choiceUI = FindFirstObjectByType<ChoiceUI>(FindObjectsInactive.Include);
         if (choiceUI != null)
         {
             choiceUI.Show(
@@ -152,7 +152,7 @@ public class TaxiController : MonoBehaviour
         Vector3 dropPos = transform.position - transform.forward * 1.5f + player.right * 0.8f;
         dropPos.y = player.position.y + 0.05f;
 
-        foreach (var item in UnityEngine.Object.FindObjectsOfType<PickupItem>(true))
+        foreach (var item in FindObjectsByType<PickupItem>(FindObjectsSortMode.None))
         {
             if (item.gameObject.name == "RoadCigarette")
             {
@@ -161,6 +161,16 @@ public class TaxiController : MonoBehaviour
                 return;
             }
         }
+
+        // RoadCigarette이 scene에 없으면 동적으로 생성
+        Debug.LogWarning("[TaxiController] RoadCigarette not found in scene — creating dynamically");
+        var cigarette = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cigarette.name = "RoadCigarette";
+        cigarette.transform.position = dropPos;
+        cigarette.transform.localScale = new Vector3(0.05f, 0.05f, 0.2f);
+        cigarette.GetComponent<MeshRenderer>().material.color = new Color(0.9f, 0.85f, 0.7f);
+        cigarette.AddComponent<PickupItem>().itemName = "담배";
+        cigarette.SetActive(true);
     }
 
     void EnableSeg(GameObject s)  { if (s != null) s.SetActive(true); }

@@ -222,7 +222,7 @@ public class GameManager : MonoBehaviour
             }
             case HighwayState.CameraPickup:
             {
-                var ci = FindObjectOfType<CameraItem>();
+                var ci = FindFirstObjectByType<CameraItem>();
                 if (ci != null) ci.gameObject.SetActive(true);
                 break;
             }
@@ -258,7 +258,7 @@ public class GameManager : MonoBehaviour
                 EnableSeg(seg_CorpseRoad);
                 hasGun = true;
                 EnableMovement(true);
-                var g = FindObjectOfType<GunSystem>();
+                var g = FindFirstObjectByType<GunSystem>();
                 if (g != null) g.Enable();
                 break;
             }
@@ -360,8 +360,9 @@ public class GameManager : MonoBehaviour
             EnableSeg(seg_WomanNPC);
             ReplaceNpcVisual(seg_WomanNPC.transform);
 
-            var womanNpc = seg_WomanNPC.GetComponentInChildren<WomanNPC>(true);
-            if (womanNpc != null) womanNpc.StartSequence();
+            // ReplaceNpcVisual之后，新 NPC_Body 会有 WomanNPC 组件，直接获取并启动
+            var newWomanNpc = seg_WomanNPC.transform.Find("WomanNPC_Visual/NPC_Body")?.GetComponent<WomanNPC>();
+            if (newWomanNpc != null) newWomanNpc.StartSequence();
         }
 
         EnableMovement(true);
@@ -417,9 +418,13 @@ public class GameManager : MonoBehaviour
         var visual = npcRoot.Find("WomanNPC_Visual");
         if (visual == null) return;
 
-        // 기존 children 모두 제거
+        // 기존 children 모두 제거 (NPC_Body 등은 여기서 파괴)
         foreach (Transform child in visual)
             UnityEngine.Object.Destroy(child.gameObject);
+
+        //旧的 WomanNPC (MakeCapsule으로 만든 원본) 파괴
+        var oldNpc = npcRoot.Find("WomanNPC");
+        if (oldNpc != null) UnityEngine.Object.Destroy(oldNpc.gameObject);
 
         // NPC_Body를 WomanNPC_Visual child로 생성
         var npc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -448,7 +453,7 @@ public class GameManager : MonoBehaviour
 
     public void EnableMovement(bool on)
     {
-        if (playerController != null) playerController.enabled = on;
+        if (playerController != null) playerController.movementLocked = !on;
     }
 
     IEnumerator WomanCutsceneRoutine()

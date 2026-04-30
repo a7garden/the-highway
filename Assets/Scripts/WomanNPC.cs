@@ -26,7 +26,7 @@ public class WomanNPC : MonoBehaviour, IInteractable
 
     void Start()
     {
-        player = UnityEngine.GameObject.FindWithTag("Player")?.transform;
+        player = GameManager.Instance != null ? GameManager.Instance.playerTransform : null;
         _anim  = GetComponentInChildren<Animator>();
     }
 
